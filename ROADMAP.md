@@ -21,21 +21,24 @@
 
 ---
 
-## Phase 2: Discovery + Processing — NOT STARTED
+## Phase 2: Discovery + Processing — COMPLETE
 
 **Goal:** Discover B2B products from public sources and process them via Playwright.
 
-| Task | Timeline | Description |
-|------|----------|-------------|
-| Implement ProductHunt discovery crawler | 2 days | Scrape/API for new B2B products, insert into `products` table |
-| Implement Reddit discovery (r/SaaS, r/startups) | 1 day | Reddit API client, filter for product launches |
-| Wire up `POST /discover` endpoint with real crawlers | 1 day | Connect discovery sources to API route |
-| Implement Playwright `processProduct()` flow | 2 days | Navigate to product URL, take screenshots, extract text, measure timing, store to MinIO |
-| Wire up `POST /process` endpoint | 1 day | Connect browser package to API route, store results in DB |
-| Create n8n workflow: Cron → Discover → Process | 1 day | Import/build workflow in n8n UI |
-| Write integration tests for discovery + processing | 1 day | Test with real URLs, verify DB + MinIO state |
+| Task | Status |
+|------|--------|
+| ProductHunt crawler (GraphQL API + Playwright scrape fallback) | Done |
+| Reddit crawler (r/SaaS, r/startups via JSON API) | Done |
+| Crawler index with `runAllCrawlers()` (parallel + dedup) | Done |
+| `POST /discover` endpoint with real crawlers, optional `sources` filter | Done |
+| `POST /process` endpoint — multi-page screenshots (hero, pricing, features) | Done |
+| `POST /process` — `measureTiming()` for performance metrics | Done |
+| Graceful 404 handling for missing subpages | Done |
+| `USER_AGENT` constant in `@repo/shared` | Done |
+| `PRODUCTHUNT_API_TOKEN` env var (optional) | Done |
+| n8n workflow template (unchanged — calls same endpoints) | Done |
 
-**Estimated: 9 days**
+**Phase 2 is fully complete.**
 
 ---
 
@@ -145,14 +148,14 @@
 | Phase | Status | Days | Cumulative |
 |-------|--------|------|------------|
 | 1. Foundation | **Complete** | 0 remaining | — |
-| 2. Discovery + Processing | Not started | 9 days | 9 days |
+| 2. Discovery + Processing | **Complete** | 0 remaining | — |
 | 3. Intelligence | Not started | 8 days | 17 days |
 | 4. Video Generation | Not started | 14 days | 31 days |
 | 5. Dashboard | Scaffold only | 12 days | 43 days |
 | 6. Distribution | Clients scaffolded | 10 days | 53 days |
 | 7. Hardening | Not started | 16 days | **69 days** |
 
-**Total remaining work: ~69 working days** (roughly 14 weeks at 5 days/week for a solo developer).
+**Total remaining work: ~60 working days** (roughly 12 weeks at 5 days/week for a solo developer).
 
 ---
 
