@@ -1,0 +1,148 @@
+{
+  "name": "Product Review Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 6 }]
+        }
+      },
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/discover",
+        "options": {}
+      },
+      "name": "Discover Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "One at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/process",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "productId", "value": "={{ $json.id }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Process Product",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/summarize",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "productId", "value": "={{ $json.productId }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Summarize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/score",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "productId", "value": "={{ $json.productId }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/video/render",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "productId", "value": "={{ $json.productId }}" },
+            { "name": "format", "value": "youtube_short" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Render Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 300]
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1760, 300],
+      "webhookId": "approval-webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:3001/distribute",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "videoId", "value": "={{ $json.videoId }}" },
+            { "name": "platforms", "value": "={{ [\"youtube\", \"tiktok\", \"instagram\"] }}" }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Distribute",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 300]
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": { "main": [[{ "node": "Discover Products", "type": "main", "index": 0 }]] },
+    "Discover Products": { "main": [[{ "node": "One at a Time", "type": "main", "index": 0 }]] },
+    "One at a Time": { "main": [[{ "node": "Process Product", "type": "main", "index": 0 }]] },
+    "Process Product": { "main": [[{ "node": "Summarize", "type": "main", "index": 0 }]] },
+    "Summarize": { "main": [[{ "node": "Score", "type": "main", "index": 0 }]] },
+    "Score": { "main": [[{ "node": "Render Video", "type": "main", "index": 0 }]] },
+    "Render Video": { "main": [[{ "node": "Wait for Approval", "type": "main", "index": 0 }]] },
+    "Wait for Approval": { "main": [[{ "node": "Distribute", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

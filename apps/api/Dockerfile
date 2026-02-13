@@ -17,9 +17,9 @@ RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
 
 COPY packages/ packages/
 COPY apps/api/ apps/api/
-COPY tsconfig.base.json ./
+COPY tsconfig.base.json turbo.json ./
 
-RUN pnpm --filter @repo/api build || true
+RUN pnpm turbo build --filter=@repo/api
 
 EXPOSE 3001
 CMD ["pnpm", "--filter", "@repo/api", "dev"]

@@ -13,10 +13,11 @@
 | README, MIT License | Done |
 | Push to GitHub | Done |
 
-**What's missing from Phase 1:**
-- Drizzle migrations not generated yet (`drizzle-kit generate` / `drizzle-kit migrate`)
-- Docker images not tested (`docker compose up` not verified)
-- n8n not configured with API connection
+| Drizzle migration generated (`0000_sloppy_zodiak.sql`) | Done |
+| Docker migration service + Dockerfile fixes (`turbo.json` copy) | Done |
+| n8n workflow template (`n8n/workflows/product-review-pipeline.json`) | Done |
+
+**Phase 1 is fully complete.**
 
 ---
 

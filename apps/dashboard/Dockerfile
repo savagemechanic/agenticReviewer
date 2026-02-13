@@ -8,7 +8,8 @@ COPY apps/dashboard/package.json apps/dashboard/
 RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
 
 COPY apps/dashboard/ apps/dashboard/
-COPY tsconfig.base.json ./
+COPY packages/ packages/
+COPY tsconfig.base.json turbo.json ./
 
 RUN pnpm --filter @repo/dashboard build
 

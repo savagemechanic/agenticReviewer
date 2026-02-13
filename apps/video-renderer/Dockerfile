@@ -14,7 +14,7 @@ RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
 
 COPY packages/ packages/
 COPY apps/video-renderer/ apps/video-renderer/
-COPY tsconfig.base.json ./
+COPY tsconfig.base.json turbo.json ./
 
 EXPOSE 3002
 CMD ["pnpm", "--filter", "@repo/video-renderer", "dev"]
