@@ -1,0 +1,13 @@
+{
+  "name": "@repo/distribution",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc" },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "undici": "^7.2.0"
+  },
+  "devDependencies": { "typescript": "^5.7.0" }
+}

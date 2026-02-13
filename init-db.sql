@@ -1,0 +1,2 @@
+CREATE DATABASE agentic_reviewer;
+CREATE DATABASE n8n;

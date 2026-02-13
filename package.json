@@ -1,0 +1,21 @@
+{
+  "name": "agentic-reviewer",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*", "tooling/*"],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "db:generate": "turbo db:generate --filter=@repo/db",
+    "db:migrate": "turbo db:migrate --filter=@repo/db",
+    "db:push": "turbo db:push --filter=@repo/db"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}
