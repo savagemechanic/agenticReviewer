@@ -19,6 +19,26 @@ export interface ScoreResult {
   model: string;
 }
 
+function clamp(val: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, val));
+}
+
+function parseJsonSafe(raw: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
 export async function scoreProduct(input: ScoreInput): Promise<ScoreResult> {
   const model = "claude-sonnet-4-5-20250929";
   const prompt = `You are a B2B software scoring engine. Score this product on a scale of 1-10 for each dimension.
@@ -47,6 +67,31 @@ Respond in this exact JSON format (no markdown, just JSON):
 }`;
 
   const raw = await complete(prompt, { model });
-  const parsed = JSON.parse(raw);
-  return { ...parsed, model };
+  const parsed = parseJsonSafe(raw);
+
+  if (!parsed) {
+    throw new Error("Failed to parse LLM score response as JSON");
+  }
+
+  const uxScore = clamp(Number(parsed.uxScore) || 5, 1, 10);
+  const performanceScore = clamp(Number(parsed.performanceScore) || 5, 1, 10);
+  const featureScore = clamp(Number(parsed.featureScore) || 5, 1, 10);
+  const valueScore = clamp(Number(parsed.valueScore) || 5, 1, 10);
+
+  // Validate overall is roughly the average; if not, recalculate
+  const avg = (uxScore + performanceScore + featureScore + valueScore) / 4;
+  let overall = clamp(Number(parsed.overall) || avg, 1, 10);
+  if (Math.abs(overall - avg) > 1.5) {
+    overall = Math.round(avg * 10) / 10;
+  }
+
+  return {
+    overall,
+    uxScore,
+    performanceScore,
+    featureScore,
+    valueScore,
+    reasoning: String(parsed.reasoning ?? ""),
+    model,
+  };
 }

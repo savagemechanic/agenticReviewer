@@ -16,7 +16,9 @@
     "@repo/shared": "workspace:*",
     "@repo/storage": "workspace:*",
     "@repo/browser": "workspace:*",
-    "@repo/llm": "workspace:*"
+    "@repo/llm": "workspace:*",
+    "@repo/distribution": "workspace:*",
+    "ioredis": "^5.4.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

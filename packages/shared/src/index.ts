@@ -28,6 +28,9 @@ export type Platform = (typeof PLATFORMS)[number];
 export const SCREENSHOT_TYPES = ["hero", "pricing", "features", "dashboard"] as const;
 export type ScreenshotType = (typeof SCREENSHOT_TYPES)[number];
 
+// User agent for HTTP requests
+export const USER_AGENT = "AgenticReviewer/1.0 (https://github.com/agenticreviewer)";
+
 // Discovery sources
 export const DISCOVERY_SOURCES = ["producthunt", "g2", "capterra", "hackernews", "reddit"] as const;
 export type DiscoverySource = (typeof DISCOVERY_SOURCES)[number];
@@ -48,3 +51,9 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+// Logger
+export { createLogger, type Logger } from "./logger.js";
+
+// Rate limiting
+export { createRateLimiter, type RateLimiter, type RateLimiterOptions, type RedisLike } from "./rate-limit.js";

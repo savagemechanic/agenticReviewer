@@ -9,4 +9,5 @@ export const env = {
     bucket: process.env.MINIO_BUCKET ?? "agentic-reviewer",
   },
   videoRendererUrl: process.env.VIDEO_RENDERER_URL ?? "http://localhost:3002",
+  CORS_ORIGIN: process.env.CORS_ORIGIN,
 };

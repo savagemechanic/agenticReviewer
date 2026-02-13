@@ -1,5 +1,8 @@
 import { chromium, Browser, Page } from "playwright";
 
+export * from "./crawlers/index.js";
+export { withPage } from "./pool.js";
+
 let browser: Browser | null = null;
 
 export async function getBrowser(): Promise<Browser> {
@@ -28,14 +31,12 @@ export async function takeScreenshot(
   url: string,
   options?: { fullPage?: boolean; width?: number; height?: number }
 ): Promise<ScreenshotResult> {
-  const b = await getBrowser();
-  const page = await b.newPage({
-    viewport: {
+  const { withPage } = await import("./pool.js");
+  return withPage(async (page) => {
+    await page.setViewportSize({
       width: options?.width ?? 1280,
       height: options?.height ?? 720,
-    },
-  });
-  try {
+    });
     await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
     const buffer = await page.screenshot({
       fullPage: options?.fullPage ?? false,
@@ -46,9 +47,7 @@ export async function takeScreenshot(
       width: options?.width ?? 1280,
       height: options?.height ?? 720,
     };
-  } finally {
-    await page.close();
-  }
+  });
 }
 
 export interface ExtractionResult {
@@ -59,9 +58,8 @@ export interface ExtractionResult {
 }
 
 export async function extractPageData(url: string): Promise<ExtractionResult> {
-  const b = await getBrowser();
-  const page = await b.newPage();
-  try {
+  const { withPage } = await import("./pool.js");
+  return withPage(async (page) => {
     const start = Date.now();
     await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
     const loadTimeMs = Date.now() - start;
@@ -76,9 +74,7 @@ export async function extractPageData(url: string): Promise<ExtractionResult> {
     });
 
     return { title, headings, bodyText, loadTimeMs };
-  } finally {
-    await page.close();
-  }
+  });
 }
 
 export interface TimingResult {
@@ -89,9 +85,8 @@ export interface TimingResult {
 }
 
 export async function measureTiming(url: string): Promise<TimingResult> {
-  const b = await getBrowser();
-  const page = await b.newPage();
-  try {
+  const { withPage } = await import("./pool.js");
+  return withPage(async (page) => {
     await page.goto(url, { waitUntil: "load", timeout: 30000 });
     const timing = await page.evaluate(() => {
       const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
@@ -108,7 +103,5 @@ export async function measureTiming(url: string): Promise<TimingResult> {
       return entry?.startTime ?? 0;
     });
     return { ...timing, fcp };
-  } finally {
-    await page.close();
-  }
+  });
 }

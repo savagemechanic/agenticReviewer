@@ -4,8 +4,15 @@ import { z } from "zod";
 import { renderVideo } from "./render.js";
 
 const app = new Hono();
+const startTime = Date.now();
 
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get("/health", (c) => {
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+  return c.json({
+    status: "ok",
+    uptime,
+  });
+});
 
 const renderSchema = z.object({
   videoId: z.string().uuid(),
