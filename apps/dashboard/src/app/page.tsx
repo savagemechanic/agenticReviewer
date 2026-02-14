@@ -15,7 +15,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, type ReviewStatus } from "@/components/StatusBadge";
 import { useStats } from "@/hooks/useStats";
 import { useProducts } from "@/hooks/useProducts";
 import { useActions } from "@/hooks/useActions";
@@ -48,7 +48,6 @@ export default function DashboardPage() {
 
   const handleProcessAll = async () => {
     // TODO: Implement process all action
-    console.log("Process all clicked");
   };
 
   const totalProducts = stats?.totalProducts ?? 0;
@@ -226,7 +225,7 @@ export default function DashboardPage() {
                         </Link>
                       </td>
                       <td className="p-4">
-                        <StatusBadge status={product.status as any} />
+                        <StatusBadge status={product.status as ReviewStatus} />
                       </td>
                       <td className="p-4">
                         <Badge variant="outline">{product.source}</Badge>

@@ -5,7 +5,9 @@ import { db } from "../db.js";
 import { storage } from "../storage.js";
 import { products, screenshots, pageExtractions } from "@repo/db/schema";
 import { takeScreenshot, extractPageData, measureTiming } from "@repo/browser";
-import type { ScreenshotType } from "@repo/shared";
+import { createLogger, type ScreenshotType } from "@repo/shared";
+
+const logger = createLogger("api:process");
 
 const schema = z.object({ productId: z.string().uuid() });
 
@@ -51,7 +53,7 @@ process.post("/", async (c) => {
         });
       } catch (err) {
         // Skip pages that 404 or fail to load
-        console.warn(`Failed to capture ${page.type} for ${pageUrl}: ${err}`);
+        logger.warn("Failed to capture page", { type: page.type, url: pageUrl, error: String(err) });
       }
     }
 

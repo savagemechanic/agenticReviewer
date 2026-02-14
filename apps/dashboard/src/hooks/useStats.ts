@@ -7,7 +7,15 @@ interface StatsData {
   totalProducts: number;
   productsByStatus: Record<string, number>;
   videosByStatus: Record<string, number>;
-  recentDiscoveryRuns: any[];
+  recentDiscoveryRuns: Array<{
+    id?: string;
+    source?: string;
+    status: string;
+    productsFound?: number;
+    productsNew?: number;
+    startedAt?: string;
+    completedAt?: string;
+  }>;
 }
 
 interface StatsResponse {

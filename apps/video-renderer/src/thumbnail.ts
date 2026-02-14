@@ -13,6 +13,8 @@ export async function renderThumbnail(
   const width = isShort ? 1080 : 1920;
   const height = isShort ? 1920 : 1080;
 
+  // SAFETY: Remotion expects Record<string, unknown> for props but our concrete
+  // ReviewVideoProps interface is structurally compatible at runtime.
   const p = props as unknown as Record<string, unknown>;
 
   const { buffer } = await renderStill({
@@ -25,11 +27,14 @@ export async function renderThumbnail(
       defaultProps: p,
       props: p,
       defaultCodec: "h264",
-    } as any,
+    // SAFETY: Remotion's CompositionConfig type doesn't include all fields we pass,
+    // but the still renderer accepts this shape at runtime.
+    } as Parameters<typeof renderStill>[0]["composition"],
     serveUrl: bundleLocation,
     frame: scoreFrame,
     imageFormat: "png",
     inputProps: p,
+    // SAFETY: Remotion's renderStill requires `output` but returns buffer when null is passed
     output: null as unknown as string,
   });
 

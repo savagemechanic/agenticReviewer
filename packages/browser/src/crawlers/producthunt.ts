@@ -1,4 +1,8 @@
+import { z } from "zod";
+import { type Result, ok, err, createLogger } from "@repo/shared";
 import { getBrowser } from "../index.js";
+
+const logger = createLogger("crawler:producthunt");
 
 interface DiscoveredProduct {
   name: string;
@@ -7,14 +11,24 @@ interface DiscoveredProduct {
   source: "producthunt";
 }
 
-interface PHGraphQLProduct {
-  name: string;
-  url: string;
-  tagline: string;
-  website: string;
-}
+const phGraphQLResponseSchema = z.object({
+  data: z.object({
+    posts: z.object({
+      edges: z.array(
+        z.object({
+          node: z.object({
+            name: z.string(),
+            tagline: z.string(),
+            website: z.string(),
+            url: z.string(),
+          }),
+        })
+      ),
+    }),
+  }),
+});
 
-async function discoverViaAPI(token: string): Promise<DiscoveredProduct[]> {
+async function discoverViaAPI(token: string): Promise<Result<DiscoveredProduct[]>> {
   const query = `{
     posts(order: NEWEST, first: 20, topic: "saas") {
       edges {
@@ -38,22 +52,27 @@ async function discoverViaAPI(token: string): Promise<DiscoveredProduct[]> {
   });
 
   if (!res.ok) {
-    throw new Error(`ProductHunt API error: ${res.status} ${res.statusText}`);
+    return err(`ProductHunt API error: ${res.status} ${res.statusText}`);
   }
 
-  const data = (await res.json()) as {
-    data: { posts: { edges: { node: PHGraphQLProduct }[] } };
-  };
+  const json: unknown = await res.json();
+  const parsed = phGraphQLResponseSchema.safeParse(json);
 
-  return data.data.posts.edges.map(({ node }) => ({
-    name: node.name,
-    url: node.website || node.url,
-    description: node.tagline,
-    source: "producthunt" as const,
-  }));
+  if (!parsed.success) {
+    return err(`Invalid ProductHunt API response: ${parsed.error.message}`);
+  }
+
+  return ok(
+    parsed.data.data.posts.edges.map(({ node }) => ({
+      name: node.name,
+      url: node.website || node.url,
+      description: node.tagline,
+      source: "producthunt" as const,
+    }))
+  );
 }
 
-async function discoverViaScraping(): Promise<DiscoveredProduct[]> {
+async function discoverViaScraping(): Promise<Result<DiscoveredProduct[]>> {
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
@@ -79,22 +98,26 @@ async function discoverViaScraping(): Promise<DiscoveredProduct[]> {
         })
     );
 
-    return products
-      .filter((p) => p.name && p.url)
-      .map((p) => ({
-        name: p.name,
-        url: p.url.startsWith("http")
-          ? p.url
-          : `https://www.producthunt.com${p.url}`,
-        description: p.description,
-        source: "producthunt" as const,
-      }));
+    return ok(
+      products
+        .filter((p) => p.name && p.url)
+        .map((p) => ({
+          name: p.name,
+          url: p.url.startsWith("http")
+            ? p.url
+            : `https://www.producthunt.com${p.url}`,
+          description: p.description,
+          source: "producthunt" as const,
+        }))
+    );
+  } catch (error) {
+    return err(`ProductHunt scraping failed: ${String(error)}`);
   } finally {
     await page.close();
   }
 }
 
-export async function discoverFromProductHunt(): Promise<DiscoveredProduct[]> {
+export async function discoverFromProductHunt(): Promise<Result<DiscoveredProduct[]>> {
   const token = process.env.PRODUCTHUNT_API_TOKEN;
   if (token) {
     return discoverViaAPI(token);

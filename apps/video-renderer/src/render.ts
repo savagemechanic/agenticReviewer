@@ -1,30 +1,40 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { z } from "zod";
 import { renderMedia } from "@remotion/renderer";
 import { createDb } from "@repo/db";
 import { products, summaries, scores, screenshots } from "@repo/db/schema";
 import { createStorageClient } from "@repo/storage";
 import { eq } from "@repo/db";
+import { createLogger } from "@repo/shared";
 import { getBundle } from "./bundle.js";
 import { renderThumbnail } from "./thumbnail.js";
+import { env } from "./env.js";
 import type { ReviewVideoProps } from "./compositions/ReviewVideo.js";
 
-const db = createDb(
-  process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/agentic_reviewer"
-);
+const logger = createLogger("video-renderer:render");
+
+const db = createDb(env.DATABASE_URL);
 const storage = createStorageClient({
-  endpoint: process.env.MINIO_ENDPOINT ?? "localhost",
-  port: Number(process.env.MINIO_PORT ?? 9000),
-  accessKey: process.env.MINIO_ACCESS_KEY ?? "minioadmin",
-  secretKey: process.env.MINIO_SECRET_KEY ?? "minioadmin",
-  bucket: process.env.MINIO_BUCKET ?? "agentic-reviewer",
+  endpoint: env.MINIO_ENDPOINT,
+  port: env.MINIO_PORT,
+  accessKey: env.MINIO_ACCESS_KEY,
+  secretKey: env.MINIO_SECRET_KEY,
+  bucket: env.MINIO_BUCKET,
 });
 
 interface RenderInput {
   videoId: string;
   productId: string;
   format: string;
+}
+
+const stringArraySchema = z.array(z.string());
+
+function parseStringArray(value: unknown): string[] {
+  const result = stringArraySchema.safeParse(value);
+  return result.success ? result.data : [];
 }
 
 export async function renderVideo(
@@ -59,9 +69,9 @@ export async function renderVideo(
   const inputProps: ReviewVideoProps = {
     productName: product.name,
     summary: summary.content,
-    keyFeatures: (summary.keyFeatures as string[]) ?? [],
-    pros: (summary.pros as string[]) ?? [],
-    cons: (summary.cons as string[]) ?? [],
+    keyFeatures: parseStringArray(summary.keyFeatures),
+    pros: parseStringArray(summary.pros),
+    cons: parseStringArray(summary.cons),
     overallScore: score.overall,
     uxScore: score.uxScore,
     performanceScore: score.performanceScore,
@@ -83,14 +93,18 @@ export async function renderVideo(
         fps,
         width,
         height,
-        defaultProps: inputProps as any,
-        props: inputProps as any,
+        // SAFETY: Remotion's renderMedia types expect Record<string, unknown> for props,
+        // but our ReviewVideoProps is a concrete interface. The runtime accepts it correctly.
+        defaultProps: inputProps as unknown as Record<string, unknown>,
+        props: inputProps as unknown as Record<string, unknown>,
         defaultCodec: "h264",
-      } as any,
+      // SAFETY: Remotion's CompositionConfig type doesn't include all fields we pass,
+      // but the renderer accepts this shape at runtime.
+      } as Parameters<typeof renderMedia>[0]["composition"],
       serveUrl: bundleLocation,
       codec: "h264",
       outputLocation: outputPath,
-      inputProps: inputProps as any,
+      inputProps: inputProps as unknown as Record<string, unknown>,
     });
 
     // Upload video to MinIO
@@ -104,8 +118,8 @@ export async function renderVideo(
       const thumbnailBuffer = await renderThumbnail(inputProps);
       thumbnailKey = `thumbnails/${input.productId}/${input.videoId}.png`;
       await storage.upload(thumbnailKey, thumbnailBuffer, "image/png");
-    } catch (err) {
-      console.warn("Thumbnail generation failed:", err);
+    } catch (error: unknown) {
+      logger.warn("Thumbnail generation failed", { error: String(error) });
     }
 
     return { storageKey, durationSec, thumbnailKey };

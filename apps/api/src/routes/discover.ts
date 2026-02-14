@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../db.js";
 import { products, discoveryRuns } from "@repo/db/schema";
 import { eq, desc } from "@repo/db";
+import { DISCOVERY_SOURCES, type DiscoverySource } from "@repo/shared";
 import {
   discoverFromProductHunt,
   discoverFromReddit,
@@ -32,6 +33,10 @@ discover.get("/", async (c) => {
   }
 });
 
+function isDiscoverySource(value: string): value is DiscoverySource {
+  return (DISCOVERY_SOURCES as readonly string[]).includes(value);
+}
+
 discover.post("/", async (c) => {
   const body = schema.parse(await c.req.json().catch(() => undefined));
   const sources = body?.sources;
@@ -50,12 +55,15 @@ discover.post("/", async (c) => {
         sources.map((s) => {
           if (s === "producthunt") return discoverFromProductHunt();
           if (s === "reddit") return discoverFromReddit();
-          return Promise.resolve([]);
+          return Promise.resolve({ ok: true as const, value: [] });
         })
       );
-      discovered = results.flat();
+      discovered = results.flatMap((r) =>
+        r.ok ? r.value.map((p) => ({ ...p, source: p.source as string })) : []
+      );
     } else {
-      discovered = await runAllCrawlers();
+      const result = await runAllCrawlers();
+      discovered = result.ok ? result.value.map((p) => ({ ...p, source: p.source as string })) : [];
     }
 
     const productIds: string[] = [];
@@ -69,13 +77,16 @@ discover.post("/", async (c) => {
         duplicateCount++;
         continue;
       }
+
+      const source = isDiscoverySource(item.source) ? item.source : "producthunt";
+
       const [product] = await db
         .insert(products)
         .values({
           name: item.name,
           url: item.url,
           description: item.description,
-          source: item.source as any,
+          source,
         })
         .returning();
       productIds.push(product.id);

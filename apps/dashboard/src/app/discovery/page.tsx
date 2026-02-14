@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, type ReviewStatus } from "@/components/StatusBadge";
 import { useStats } from "@/hooks/useStats";
 import { useActions } from "@/hooks/useActions";
 
@@ -63,16 +63,16 @@ export default function DiscoveryPage() {
     }
   };
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): ReviewStatus => {
     switch (status) {
       case "completed":
-        return "completed" as any;
+        return "completed";
       case "running":
-        return "processing" as any;
+        return "processing";
       case "failed":
-        return "failed" as any;
+        return "failed";
       default:
-        return "pending" as any;
+        return "pending";
     }
   };
 

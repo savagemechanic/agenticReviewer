@@ -13,7 +13,14 @@ export interface StorageConfig {
   bucket: string;
 }
 
-export function createStorageClient(config: StorageConfig) {
+export interface StorageClient {
+  upload(key: string, body: Buffer | Uint8Array, contentType: string): Promise<string>;
+  download(key: string): Promise<Buffer>;
+  remove(key: string): Promise<void>;
+  getPublicUrl(key: string): string;
+}
+
+export function createStorageClient(config: StorageConfig): StorageClient {
   const client = new S3Client({
     endpoint: `http://${config.endpoint}:${config.port}`,
     region: "us-east-1",
@@ -44,6 +51,7 @@ export function createStorageClient(config: StorageConfig) {
           Key: key,
         })
       );
+      // SAFETY: S3 GetObject always returns a Body for successful responses
       const bytes = await response.Body!.transformToByteArray();
       return Buffer.from(bytes);
     },
@@ -62,5 +70,3 @@ export function createStorageClient(config: StorageConfig) {
     },
   };
 }
-
-export type StorageClient = ReturnType<typeof createStorageClient>;

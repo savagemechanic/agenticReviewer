@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { type Result, ok, err } from "@repo/shared";
 import { withRetry } from "./retry.js";
 
 let client: Anthropic | null = null;
@@ -19,33 +20,37 @@ function stripMarkdownFences(text: string): string {
 export async function complete(
   prompt: string,
   options?: { maxTokens?: number; model?: string }
-): Promise<string> {
+): Promise<Result<string>> {
   const anthropic = getClient();
 
-  const raw = await withRetry(
-    async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const raw = await withRetry(
+      async () => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
 
-      try {
-        const response = await anthropic.messages.create(
-          {
-            model: options?.model ?? "claude-sonnet-4-5-20250929",
-            max_tokens: options?.maxTokens ?? 4096,
-            messages: [{ role: "user", content: prompt }],
-          },
-          { signal: controller.signal }
-        );
+        try {
+          const response = await anthropic.messages.create(
+            {
+              model: options?.model ?? "claude-sonnet-4-5-20250929",
+              max_tokens: options?.maxTokens ?? 4096,
+              messages: [{ role: "user", content: prompt }],
+            },
+            { signal: controller.signal }
+          );
 
-        const block = response.content[0];
-        if (block.type === "text") return block.text;
-        throw new Error("Unexpected response type");
-      } finally {
-        clearTimeout(timeout);
-      }
-    },
-    { maxAttempts: 3, baseDelayMs: 1000 }
-  );
+          const block = response.content[0];
+          if (block.type === "text") return block.text;
+          throw new Error("Unexpected response type");
+        } finally {
+          clearTimeout(timeout);
+        }
+      },
+      { maxAttempts: 3, baseDelayMs: 1000 }
+    );
 
-  return stripMarkdownFences(raw);
+    return ok(stripMarkdownFences(raw));
+  } catch (error: unknown) {
+    return err(`LLM completion failed: ${String(error)}`);
+  }
 }

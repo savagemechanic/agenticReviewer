@@ -1,3 +1,4 @@
+import { type Result, ok, err } from "@repo/shared";
 import { complete } from "./client.js";
 
 export interface SummaryInput {
@@ -35,7 +36,7 @@ function parseJsonSafe(raw: string): Record<string, unknown> | null {
   }
 }
 
-export async function summarizeProduct(input: SummaryInput): Promise<SummaryResult> {
+export async function summarizeProduct(input: SummaryInput): Promise<Result<SummaryResult>> {
   const model = "claude-sonnet-4-5-20250929";
   const truncatedBody = input.bodyText.slice(0, 8000);
 
@@ -59,19 +60,23 @@ Respond in this exact JSON format (no markdown, just JSON):
   "cons": ["con1", "con2"]
 }`;
 
-  const raw = await complete(prompt, { model });
-  const parsed = parseJsonSafe(raw);
-
-  if (!parsed) {
-    throw new Error("Failed to parse LLM summary response as JSON");
+  const rawResult = await complete(prompt, { model });
+  if (!rawResult.ok) {
+    return rawResult;
   }
 
-  return {
+  const parsed = parseJsonSafe(rawResult.value);
+
+  if (!parsed) {
+    return err("Failed to parse LLM summary response as JSON");
+  }
+
+  return ok({
     content: String(parsed.content ?? ""),
     targetAudience: String(parsed.targetAudience ?? ""),
     keyFeatures: Array.isArray(parsed.keyFeatures) ? parsed.keyFeatures.map(String) : [],
     pros: Array.isArray(parsed.pros) ? parsed.pros.map(String) : [],
     cons: Array.isArray(parsed.cons) ? parsed.cons.map(String) : [],
     model,
-  };
+  });
 }

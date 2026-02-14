@@ -37,39 +37,39 @@ score.post("/", async (c) => {
     where: eq(pageExtractions.productId, product.id),
   });
 
-  try {
-    const result = await scoreProduct({
-      productName: product.name,
-      summary: summary.content,
-      keyFeatures: (summary.keyFeatures as string[]) ?? [],
-      pros: (summary.pros as string[]) ?? [],
-      cons: (summary.cons as string[]) ?? [],
-      loadTimeMs: extraction?.loadTimeMs ?? 0,
-    });
+  const result = await scoreProduct({
+    productName: product.name,
+    summary: summary.content,
+    keyFeatures: (summary.keyFeatures as string[]) ?? [],
+    pros: (summary.pros as string[]) ?? [],
+    cons: (summary.cons as string[]) ?? [],
+    loadTimeMs: extraction?.loadTimeMs ?? 0,
+  });
 
-    if (existing) {
-      await db.delete(scores).where(eq(scores.productId, product.id));
-    }
-
-    await db.insert(scores).values({
-      productId: product.id,
-      overall: result.overall,
-      uxScore: result.uxScore,
-      performanceScore: result.performanceScore,
-      featureScore: result.featureScore,
-      valueScore: result.valueScore,
-      reasoning: result.reasoning,
-      model: result.model,
-    });
-
-    await db.update(products).set({ status: "scored", updatedAt: new Date() }).where(eq(products.id, product.id));
-
-    return c.json({ success: true, data: { productId: product.id } });
-  } catch (error) {
+  if (!result.ok) {
     await db
       .update(products)
       .set({ status: "summarized", updatedAt: new Date() })
       .where(eq(products.id, product.id));
-    return c.json({ success: false, error: "LLM service unavailable" }, 503);
+    return c.json({ success: false, error: result.error }, 503);
   }
+
+  if (existing) {
+    await db.delete(scores).where(eq(scores.productId, product.id));
+  }
+
+  await db.insert(scores).values({
+    productId: product.id,
+    overall: result.value.overall,
+    uxScore: result.value.uxScore,
+    performanceScore: result.value.performanceScore,
+    featureScore: result.value.featureScore,
+    valueScore: result.value.valueScore,
+    reasoning: result.value.reasoning,
+    model: result.value.model,
+  });
+
+  await db.update(products).set({ status: "scored", updatedAt: new Date() }).where(eq(products.id, product.id));
+
+  return c.json({ success: true, data: { productId: product.id } });
 });

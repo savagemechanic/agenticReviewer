@@ -1,6 +1,9 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { bundle } from "@remotion/bundler";
+import { createLogger } from "@repo/shared";
+
+const logger = createLogger("video-renderer:bundle");
 
 let bundleLocation: string | null = null;
 
@@ -13,7 +16,7 @@ export async function getBundle(): Promise<string> {
   bundleLocation = await bundle({
     entryPoint,
     onProgress: (progress) => {
-      if (progress === 100) console.log("Remotion bundle ready");
+      if (progress === 100) logger.info("Remotion bundle ready");
     },
   });
 

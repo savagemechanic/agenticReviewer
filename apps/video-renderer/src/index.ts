@@ -1,7 +1,11 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { z } from "zod";
+import { createLogger } from "@repo/shared";
 import { renderVideo } from "./render.js";
+import { env } from "./env.js";
+
+const logger = createLogger("video-renderer");
 
 const app = new Hono();
 const startTime = Date.now();
@@ -31,7 +35,6 @@ app.post("/render", async (c) => {
   }
 });
 
-const port = Number(process.env.PORT ?? 3002);
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`Video renderer running on port ${port}`);
+serve({ fetch: app.fetch, port: env.PORT }, () => {
+  logger.info("Video renderer started", { port: env.PORT });
 });

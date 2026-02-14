@@ -1,3 +1,7 @@
+import { createLogger } from "@repo/shared";
+
+const logger = createLogger("llm:tts");
+
 const ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech";
 
 export interface TTSOptions {
@@ -28,7 +32,7 @@ export async function generateNarration(options: TTSOptions): Promise<Buffer | n
   });
 
   if (!response.ok) {
-    console.warn(`ElevenLabs TTS failed: ${response.status}`);
+    logger.warn("ElevenLabs TTS failed", { status: response.status });
     return null;
   }
 

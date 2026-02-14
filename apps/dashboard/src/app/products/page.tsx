@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, type ReviewStatus } from "@/components/StatusBadge";
 import { ScoreRing } from "@/components/ScoreRing";
 import { useProducts } from "@/hooks/useProducts";
 
@@ -163,7 +163,7 @@ export default function ProductsPage() {
 
                       {/* Status and Source */}
                       <div className="flex items-center justify-between">
-                        <StatusBadge status={product.status as any} />
+                        <StatusBadge status={product.status as ReviewStatus} />
                         <Badge variant="outline">{product.source}</Badge>
                       </div>
 

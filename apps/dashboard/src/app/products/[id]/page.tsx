@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, type ReviewStatus } from "@/components/StatusBadge";
 import { ScoreRing } from "@/components/ScoreRing";
 import { useProduct } from "@/hooks/useProduct";
 
@@ -57,31 +57,40 @@ export default function ProductDetailPage() {
     );
   }
 
+  interface SummaryData {
+    content?: string;
+    keyFeatures?: string[];
+    pros?: string[];
+    cons?: string[];
+  }
+
+  interface ScoreData {
+    scores?: Record<string, number>;
+    overall?: number;
+    reasoning?: string;
+  }
+
   // Parse summary if it's a JSON string
-  let summaryData: any = {};
+  let summaryData: SummaryData = {};
   try {
     if (product.summary && typeof product.summary === "string") {
-      summaryData = JSON.parse(product.summary);
+      summaryData = JSON.parse(product.summary) as SummaryData;
     } else if (product.summary && typeof product.summary === "object") {
-      summaryData = product.summary;
+      summaryData = product.summary as SummaryData;
     }
-  } catch (e) {
-    summaryData = { content: product.summary };
+  } catch {
+    summaryData = { content: String(product.summary) };
   }
 
   // Parse score data
-  let scoreData: any = {};
-  try {
-    if (product.score && typeof product.score === "object") {
-      scoreData = product.score;
-    }
-  } catch (e) {
-    // Use default
+  let scoreData: ScoreData = {};
+  if (product.score && typeof product.score === "object") {
+    scoreData = product.score as ScoreData;
   }
 
-  const scores = scoreData.scores || {};
-  const overallScore = scoreData.overall || product.score || 0;
-  const reasoning = scoreData.reasoning || "";
+  const scores = scoreData.scores ?? {};
+  const overallScore = scoreData.overall ?? 0;
+  const reasoning = scoreData.reasoning ?? "";
 
   return (
     <div className="space-y-6">
@@ -100,7 +109,7 @@ export default function ProductDetailPage() {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <CardTitle className="text-3xl">{product.name}</CardTitle>
-                <StatusBadge status={product.status as any} />
+                <StatusBadge status={product.status as ReviewStatus} />
               </div>
               <CardDescription className="flex items-center gap-2 text-base">
                 <ExternalLink className="w-4 h-4" />
@@ -135,7 +144,7 @@ export default function ProductDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {product.screenshots.map((screenshot: any, index: number) => {
+              {product.screenshots.map((screenshot: string | { url: string; type?: string }, index: number) => {
                 const screenshotUrl =
                   typeof screenshot === "string" ? screenshot : screenshot.url;
                 const screenshotType =
@@ -251,7 +260,7 @@ export default function ProductDetailPage() {
             <div className="grid md:grid-cols-6 gap-8">
               {/* Individual Scores */}
               {Object.keys(scores).length > 0 &&
-                Object.entries(scores).map(([key, value]: [string, any]) => (
+                Object.entries(scores).map(([key, value]) => (
                   <div key={key} className="flex flex-col items-center">
                     <ScoreRing
                       score={value}
@@ -309,7 +318,7 @@ export default function ProductDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {product.videos.map((video: any, index: number) => (
+              {product.videos.map((video, index) => (
                 <div
                   key={video.id || index}
                   className="flex items-center justify-between p-4 border border-slate-800 rounded-lg hover:border-slate-700 transition-colors"
@@ -323,7 +332,7 @@ export default function ProductDetailPage() {
                         {video.format || "Default Format"}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
-                        <StatusBadge status={video.status as any} />
+                        <StatusBadge status={video.status as ReviewStatus} />
                         {video.duration && (
                           <span className="text-xs text-slate-400 flex items-center gap-1">
                             <Clock className="w-3 h-3" />

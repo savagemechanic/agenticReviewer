@@ -1,3 +1,4 @@
+import { type Result, ok, err } from "@repo/shared";
 import { complete } from "./client.js";
 
 export interface ScoreInput {
@@ -39,7 +40,7 @@ function parseJsonSafe(raw: string): Record<string, unknown> | null {
   }
 }
 
-export async function scoreProduct(input: ScoreInput): Promise<ScoreResult> {
+export async function scoreProduct(input: ScoreInput): Promise<Result<ScoreResult>> {
   const model = "claude-sonnet-4-5-20250929";
   const prompt = `You are a B2B software scoring engine. Score this product on a scale of 1-10 for each dimension.
 
@@ -66,11 +67,15 @@ Respond in this exact JSON format (no markdown, just JSON):
   "reasoning": "Brief explanation of scores"
 }`;
 
-  const raw = await complete(prompt, { model });
-  const parsed = parseJsonSafe(raw);
+  const rawResult = await complete(prompt, { model });
+  if (!rawResult.ok) {
+    return rawResult;
+  }
+
+  const parsed = parseJsonSafe(rawResult.value);
 
   if (!parsed) {
-    throw new Error("Failed to parse LLM score response as JSON");
+    return err("Failed to parse LLM score response as JSON");
   }
 
   const uxScore = clamp(Number(parsed.uxScore) || 5, 1, 10);
@@ -85,7 +90,7 @@ Respond in this exact JSON format (no markdown, just JSON):
     overall = Math.round(avg * 10) / 10;
   }
 
-  return {
+  return ok({
     overall,
     uxScore,
     performanceScore,
@@ -93,5 +98,5 @@ Respond in this exact JSON format (no markdown, just JSON):
     valueScore,
     reasoning: String(parsed.reasoning ?? ""),
     model,
-  };
+  });
 }

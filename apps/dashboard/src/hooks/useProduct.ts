@@ -9,10 +9,16 @@ interface ProductDetail {
   url: string;
   status: string;
   source: string;
-  screenshots?: string[];
-  summary?: string;
-  score?: number;
-  videos?: any[];
+  screenshots?: Array<string | { url: string; type?: string }>;
+  summary?: string | Record<string, unknown>;
+  score?: number | Record<string, unknown>;
+  videos?: Array<{
+    id?: string;
+    format?: string;
+    status: string;
+    duration?: number;
+    videoPath?: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }

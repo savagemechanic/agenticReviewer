@@ -1,4 +1,7 @@
-import { USER_AGENT } from "@repo/shared";
+import { z } from "zod";
+import { USER_AGENT, type Result, ok, err, createLogger } from "@repo/shared";
+
+const logger = createLogger("crawler:reddit");
 
 interface DiscoveredProduct {
   name: string;
@@ -7,21 +10,21 @@ interface DiscoveredProduct {
   source: "reddit";
 }
 
-interface RedditPost {
-  data: {
-    title: string;
-    selftext: string;
-    url: string;
-    is_self: boolean;
-    domain: string;
-  };
-}
-
-interface RedditListing {
-  data: {
-    children: RedditPost[];
-  };
-}
+const redditListingSchema = z.object({
+  data: z.object({
+    children: z.array(
+      z.object({
+        data: z.object({
+          title: z.string(),
+          selftext: z.string(),
+          url: z.string(),
+          is_self: z.boolean(),
+          domain: z.string(),
+        }),
+      })
+    ),
+  }),
+});
 
 const SUBREDDITS = [
   "https://www.reddit.com/r/SaaS/new.json?limit=25",
@@ -57,14 +60,21 @@ async function fetchSubreddit(url: string): Promise<DiscoveredProduct[]> {
   });
 
   if (!res.ok) {
-    console.warn(`Reddit fetch failed for ${url}: ${res.status}`);
+    logger.warn("Reddit fetch failed", { url, status: res.status });
     return [];
   }
 
-  const listing = (await res.json()) as RedditListing;
+  const json: unknown = await res.json();
+  const parsed = redditListingSchema.safeParse(json);
+
+  if (!parsed.success) {
+    logger.warn("Invalid Reddit response", { url, error: parsed.error.message });
+    return [];
+  }
+
   const results: DiscoveredProduct[] = [];
 
-  for (const post of listing.data.children) {
+  for (const post of parsed.data.data.children) {
     const { title, selftext, url: postUrl, is_self, domain } = post.data;
 
     // External link posts
@@ -95,7 +105,7 @@ async function fetchSubreddit(url: string): Promise<DiscoveredProduct[]> {
   return results;
 }
 
-export async function discoverFromReddit(): Promise<DiscoveredProduct[]> {
+export async function discoverFromReddit(): Promise<Result<DiscoveredProduct[]>> {
   const results = await Promise.all(SUBREDDITS.map(fetchSubreddit));
-  return results.flat().slice(0, 20);
+  return ok(results.flat().slice(0, 20));
 }

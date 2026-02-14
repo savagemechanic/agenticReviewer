@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, type ReviewStatus } from "@/components/StatusBadge";
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,8 @@ export default function VideosPage() {
     try {
       await approveVideo.mutateAsync(videoId);
       refetch();
-    } catch (error) {
-      console.error("Failed to approve video:", error);
+    } catch {
+      // Error handled by mutation state
     }
   };
 
@@ -57,8 +57,8 @@ export default function VideosPage() {
       setRejectReason("");
       setSelectedVideoId(null);
       refetch();
-    } catch (error) {
-      console.error("Failed to reject video:", error);
+    } catch {
+      // Error handled by mutation state
     }
   };
 
@@ -114,7 +114,7 @@ export default function VideosPage() {
                       Product ID: {video.productId}
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-2">
-                      <StatusBadge status={video.status as any} />
+                      <StatusBadge status={video.status as ReviewStatus} />
                       {video.videoPath && (
                         <Badge variant="outline">Ready</Badge>
                       )}

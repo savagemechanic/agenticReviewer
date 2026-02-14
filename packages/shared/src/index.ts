@@ -52,6 +52,9 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+// Result type
+export { ok, err, type Result } from "./result.js";
+
 // Logger
 export { createLogger, type Logger } from "./logger.js";
 

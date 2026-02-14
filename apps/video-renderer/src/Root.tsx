@@ -29,7 +29,10 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="ReviewVideo"
-        component={ReviewVideo as any}
+        // SAFETY: Remotion's Composition component types its `component` prop as React.LazyExoticComponent | React.FC,
+        // but ReviewVideo's props don't extend Record<string, unknown> which Remotion expects at the type level.
+        // The runtime behavior is correct — Remotion passes props through to the component.
+        component={ReviewVideo as unknown as React.FC<Record<string, unknown>>}
         durationInFrames={570}
         fps={30}
         width={1920}
@@ -38,7 +41,8 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="ReviewVideoShort"
-        component={ReviewVideo as any}
+        // SAFETY: Same Remotion type mismatch as above — component props are correctly passed at runtime.
+        component={ReviewVideo as unknown as React.FC<Record<string, unknown>>}
         durationInFrames={300}
         fps={30}
         width={1080}

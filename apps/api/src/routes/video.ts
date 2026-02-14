@@ -5,6 +5,11 @@ import { db } from "../db.js";
 import { products, videos } from "@repo/db/schema";
 import { env } from "../env.js";
 
+const videoRendererResponseSchema = z.object({
+  storageKey: z.string(),
+  durationSec: z.number(),
+});
+
 const schema = z.object({
   productId: z.string().uuid(),
   format: z.enum(["youtube_long", "tiktok_short", "instagram_reel"]).default("youtube_long"),
@@ -33,17 +38,25 @@ videoRender.post("/render", async (c) => {
 
   try {
     // Call video renderer service
-    const response = await fetch(`${env.videoRendererUrl}/render`, {
+    const response = await fetch(`${env.VIDEO_RENDERER_URL}/render`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ videoId: video.id, productId: product.id, format: body.format }),
     });
 
     if (!response.ok) {
-      throw new Error(`Video renderer returned ${response.status}`);
+      await db.update(videos).set({ status: "rejected", updatedAt: new Date() }).where(eq(videos.id, video.id));
+      return c.json({ success: false, error: `Video renderer returned ${response.status}` }, 502);
     }
 
-    const result = await response.json() as { storageKey: string; durationSec: number };
+    const json: unknown = await response.json();
+    const parsed = videoRendererResponseSchema.safeParse(json);
+    if (!parsed.success) {
+      await db.update(videos).set({ status: "rejected", updatedAt: new Date() }).where(eq(videos.id, video.id));
+      return c.json({ success: false, error: "Invalid response from video renderer" }, 502);
+    }
+
+    const result = parsed.data;
 
     await db
       .update(videos)
