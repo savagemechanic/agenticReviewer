@@ -11,16 +11,23 @@ interface DiscoveredProduct {
 }
 
 export async function runAllCrawlers(): Promise<Result<DiscoveredProduct[]>> {
-  const [phResult, redditResult, hnResult] = await Promise.all([
+  const [phResult, redditResult, hnResult] = await Promise.allSettled([
     discoverFromProductHunt(),
     discoverFromReddit(),
     discoverFromHackerNews(),
   ]);
 
+  const unwrap = (r: PromiseSettledResult<Result<DiscoveredProduct[]>>): Result<DiscoveredProduct[]> =>
+    r.status === "fulfilled" ? r.value : { ok: false as const, error: String(r.reason) };
+
+  const ph = unwrap(phResult);
+  const reddit = unwrap(redditResult);
+  const hn = unwrap(hnResult);
+
   const all: DiscoveredProduct[] = [];
-  if (phResult.ok) all.push(...phResult.value);
-  if (redditResult.ok) all.push(...redditResult.value);
-  if (hnResult.ok) all.push(...hnResult.value);
+  if (ph.ok) all.push(...ph.value);
+  if (reddit.ok) all.push(...reddit.value);
+  if (hn.ok) all.push(...hn.value);
 
   // Deduplicate by normalized URL
   const seen = new Set<string>();

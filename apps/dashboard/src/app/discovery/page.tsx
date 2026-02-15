@@ -39,7 +39,7 @@ export default function DiscoveryPage() {
 
   const formatDuration = (start: string, end: string) => {
     if (!start || !end) return "N/A";
-    const duration = new Date(end).getTime() - new Date(start).getTime();
+    const duration = Math.abs(new Date(end).getTime() - new Date(start).getTime());
     const seconds = Math.floor(duration / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;

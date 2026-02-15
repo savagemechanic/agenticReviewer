@@ -11,6 +11,7 @@ let browser: Browser | null = null;
 export async function getBrowser(): Promise<Browser> {
   if (!browser || !browser.isConnected()) {
     browser = await chromium.launch({
+      executablePath: process.env.CHROMIUM_PATH || undefined,
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
     });
   }

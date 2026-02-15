@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -20,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -87,10 +85,11 @@ services:
     ports:
       - "3001:3001"
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agentic_reviewer
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
+      MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: agentic-reviewer
@@ -115,9 +114,10 @@ services:
     ports:
       - "3002:3002"
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agentic_reviewer
       MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
+      MINIO_PORT: "9000"
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: agentic-reviewer
@@ -135,9 +135,12 @@ services:
     build:
       context: .
       dockerfile: apps/dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
     ports:
       - "3000:3000"
     environment:
+      NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://localhost:3001
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agentic_reviewer
     depends_on:

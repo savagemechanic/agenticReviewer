@@ -1,24 +1,31 @@
-FROM node:20-slim AS base
+FROM node:20-alpine AS base
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* tsconfig.base.json turbo.json ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/db/package.json packages/db/
 COPY apps/dashboard/package.json apps/dashboard/
 
 RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
 
-COPY apps/dashboard/ apps/dashboard/
 COPY packages/ packages/
-COPY tsconfig.base.json turbo.json ./
+COPY apps/dashboard/ apps/dashboard/
 
-RUN pnpm --filter @repo/dashboard build
+ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN pnpm turbo build --filter=@repo/dashboard
 
-FROM node:20-slim AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 COPY --from=base /app/apps/dashboard/.next/standalone ./
-COPY --from=base /app/apps/dashboard/.next/static ./.next/static
-COPY --from=base /app/apps/dashboard/public ./public
+COPY --from=base /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "server.js"]
+CMD ["node", "apps/dashboard/server.js"]

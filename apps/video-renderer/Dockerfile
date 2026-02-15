@@ -1,10 +1,10 @@
-FROM node:20-slim
+FROM node:20-alpine
 
-RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* tsconfig.base.json turbo.json ./
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
 COPY packages/storage/package.json packages/storage/
@@ -14,7 +14,8 @@ RUN corepack enable && pnpm install --frozen-lockfile || pnpm install
 
 COPY packages/ packages/
 COPY apps/video-renderer/ apps/video-renderer/
-COPY tsconfig.base.json turbo.json ./
+
+RUN pnpm turbo build --filter=@repo/video-renderer
 
 EXPOSE 3002
-CMD ["pnpm", "--filter", "@repo/video-renderer", "dev"]
+CMD ["pnpm", "--filter", "@repo/video-renderer", "exec", "tsx", "src/index.ts"]
