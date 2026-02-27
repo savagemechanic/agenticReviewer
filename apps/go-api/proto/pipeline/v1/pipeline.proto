@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package pipeline.v1;
+
+option go_package = "github.com/agenticreviewer/go-api/gen/pipeline/v1;pipelinev1";
+
+// ---------------------------------------------------------------------------
+// Discovery
+// ---------------------------------------------------------------------------
+
+service DiscoveryService {
+  rpc Discover(DiscoverRequest) returns (DiscoverResponse);
+}
+
+message DiscoverRequest {
+  repeated string sources = 1;
+}
+
+message DiscoverResponse {
+  int32  found  = 1;
+  int32  new    = 2;
+  string run_id = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Process (browser automation)
+// ---------------------------------------------------------------------------
+
+service ProcessService {
+  rpc Process(ProcessRequest) returns (ProcessResponse);
+}
+
+message ProcessRequest {
+  string product_id = 1;
+}
+
+message ProcessResponse {
+  string status = 1;
+  string error  = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Summarize (LLM)
+// ---------------------------------------------------------------------------
+
+service SummarizeService {
+  rpc Summarize(SummarizeRequest) returns (SummarizeResponse);
+}
+
+message SummarizeRequest {
+  string product_id = 1;
+}
+
+message SummarizeResponse {
+  string status = 1;
+  string error  = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Score (LLM)
+// ---------------------------------------------------------------------------
+
+service ScoreService {
+  rpc Score(ScoreRequest) returns (ScoreResponse);
+}
+
+message ScoreRequest {
+  string product_id = 1;
+}
+
+message ScoreResponse {
+  string status = 1;
+  string error  = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Render (calls Remotion via HTTP)
+// ---------------------------------------------------------------------------
+
+service RenderService {
+  rpc Render(RenderRequest) returns (RenderResponse);
+}
+
+message RenderRequest {
+  string product_id = 1;
+}
+
+message RenderResponse {
+  string status   = 1;
+  string video_id = 2;
+  string error    = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Distribute (YouTube/TikTok/Instagram)
+// ---------------------------------------------------------------------------
+
+service DistributeService {
+  rpc Distribute(DistributeRequest) returns (DistributeResponse);
+}
+
+message DistributeRequest {
+  string video_id = 1;
+  string platform = 2;
+}
+
+message DistributeResponse {
+  string status = 1;
+  string url    = 2;
+  string error  = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline orchestration
+// ---------------------------------------------------------------------------
+
+service PipelineService {
+  rpc ProcessAll(ProcessAllRequest) returns (ProcessAllResponse);
+}
+
+message ProcessAllRequest {}
+
+message StageResult {
+  string product_id   = 1;
+  string product_name = 2;
+  string stage        = 3;
+  string status       = 4;
+  string error        = 5;
+}
+
+message ProcessAllResponse {
+  repeated StageResult results = 1;
+}

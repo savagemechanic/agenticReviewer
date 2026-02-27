@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS publications;
+DROP TABLE IF EXISTS discovery_runs;
+DROP TABLE IF EXISTS videos;
+DROP TABLE IF EXISTS scores;
+DROP TABLE IF EXISTS summaries;
+DROP TABLE IF EXISTS page_extractions;
+DROP TABLE IF EXISTS screenshots;
+DROP TABLE IF EXISTS products;
